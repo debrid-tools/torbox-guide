@@ -1,0 +1,86 @@
+name: Check TorBox plan status
+
+on:
+  schedule:
+    # Runs daily at 00:05 UTC
+    - cron: "5 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Query TorBox API
+        id: api
+        run: |
+          set -euo pipefail
+          if [ -z "${{ secrets.TORBOX_API_TOKEN }}" ]; then
+            echo "::error::TORBOX_API_TOKEN secret is not set"
+            exit 1
+          fi
+
+          RESPONSE=$(curl -sS --fail-with-body \
+            --location 'https://api.torbox.app/v1/api/user/me?settings=false' \
+            --header "Authorization: Bearer ${{ secrets.TORBOX_API_TOKEN }}")
+
+          echo "::debug::$RESPONSE"
+
+          # Extract fields with jq
+          SUCCESS=$(echo "$RESPONSE" | jq -r '.success')
+          PLAN_ID=$(echo "$RESPONSE" | jq -r '.data.plan // 0')
+          IS_SUBSCRIBED=$(echo "$RESPONSE" | jq -r '.data.is_subscribed // false')
+
+          # A plan is considered active when:
+          #  - the API call succeeded
+          #  - plan id is greater than 0 (0 = free)
+          #  - the account is currently subscribed
+          if [ "$SUCCESS" = "true" ] && [ "$PLAN_ID" -gt 0 ] && [ "$IS_SUBSCRIBED" = "true" ]; then
+            PLAN_ACTIVE="true"
+          else
+            PLAN_ACTIVE="false"
+          fi
+
+          {
+            echo "plan_active=$PLAN_ACTIVE"
+            echo "plan_id=$PLAN_ID"
+            echo "checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update status.json
+        run: |
+          set -euo pipefail
+          STATUS_FILE="assets/data/status.json"
+          mkdir -p assets/data
+
+          jq -n \
+            --arg plan_active "${{ steps.api.outputs.plan_active }}" \
+            --argjson plan_id ${{ steps.api.outputs.plan_id }} \
+            --arg checked_at "${{ steps.api.outputs.checked_at }}" \
+            '{
+              plan_active: ($plan_active == "true"),
+              plan_id: $plan_id,
+              checked_at: $checked_at,
+              note: "Updated daily by .github/workflows/check-plan.yml"
+            }' > "$STATUS_FILE"
+
+          echo "Updated $STATUS_FILE:"
+          cat "$STATUS_FILE"
+
+      - name: Commit status
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/data/status.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update TorBox plan status [skip ci]"
+            git push
+          fi
