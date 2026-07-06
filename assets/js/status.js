@@ -31,16 +31,14 @@
 			return iso;
 		}
 
-		var timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-		return date.toLocaleString(undefined, {
+		return new Intl.DateTimeFormat(undefined, {
 			year: "numeric",
 			month: "short",
 			day: "numeric",
 			hour: "2-digit",
 			minute: "2-digit",
-			timeZone: timeZone,
 			timeZoneName: "short"
-		});
+		}).format(date);
 	}
 
 	function applyStatus(data) {
@@ -48,8 +46,8 @@
 		var state = active ? "is-active" : "is-inactive";
 		var title = active ? "Referrer's plan is active!" : "Referrer's plan is NOT active";
 		var sub = active
-		? "The referral code above is backed by a paid TorBox plan. Last checked (client time): " + formatDate(data && data.checked_at)
-		: "The referrer does not currently have a paid plan — a referral would not grant a bonus right now. Last checked (client time): " + formatDate(data && data.checked_at);
+		? "The referral code above is backed by a paid TorBox plan. Last checked: " + formatDate(data && data.checked_at)
+		: "The referrer does not currently have a paid plan — a referral would not grant a bonus right now. Last checked: " + formatDate(data && data.checked_at);
 		setLight("status-light", state);
 		setText("status-title", title);
 		setText("status-sub", sub);
