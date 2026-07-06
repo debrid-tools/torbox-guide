@@ -305,11 +305,12 @@ code {
 }
 
 .status-card {
-	display: inline-flex;
+	display: flex;
 	align-items: center;
 	gap: 14px;
+	width: 100%;
 	max-width: 100%;
-	margin: 10px auto 18px;
+	margin: 10px 0 18px;
 	padding: 14px 18px;
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
