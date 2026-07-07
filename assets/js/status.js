@@ -23,7 +23,7 @@
 
 	function formatDate(iso) {
 		if (!iso) {
-			return "—";
+			return "Not available";
 		}
 
 		var date = new Date(iso);
@@ -47,7 +47,7 @@
 		var title = active ? "Referrer's plan is active!" : "Referrer's plan is NOT active";
 		var sub = active
 		? "The referral code above is backed by a paid TorBox plan. Last checked: " + formatDate(data && data.checked_at)
-		: "The referrer does not currently have a paid plan — a referral would not grant a bonus right now. Last checked: " + formatDate(data && data.checked_at);
+		: "The referrer does not currently have a paid plan, so a referral would not grant a bonus right now. Last checked: " + formatDate(data && data.checked_at);
 		setLight("status-light", state);
 		setText("status-title", title);
 		setText("status-sub", sub);
