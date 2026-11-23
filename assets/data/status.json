@@ -1,6 +1,6 @@
 {
   "plan_active": true,
   "plan_id": 2,
-  "checked_at": "2026-11-22T05:38:43Z",
+  "checked_at": "2026-11-23T06:21:52Z",
   "note": "Updated daily by .github/workflows/check-plan.yml"
 }
